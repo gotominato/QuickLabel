@@ -21,6 +21,9 @@ class LabelingTool:
         self.current_index = -1
         self.current_image_name = None
         
+        self.message = ''
+        self.quit_flag = False
+        
     def _find_images(self) -> list:
         image_ext = ['*.jpg', '*.jpeg', '*.png']
         images = []
@@ -35,7 +38,8 @@ class LabelingTool:
         elif self.mode == 'add_label':
             self._add_label()
         else:
-            self.terminal_view.show_message(f'エラー: モードが指定されていないか、不明なモード "{self.mode}" です。')
+            self.message = f'エラー: モードが指定されていないか、不明なモード "{self.mode}" です。'
+            self.terminal_view.show_message(self.message)
             raise NotImplementedError
 
     def _label_image(self):
@@ -61,48 +65,113 @@ class LabelingTool:
                 'image': self.current_image
             }
             
-            self.terminal_view.render(display_data)
+            self.message = ''
+            
+            self.terminal_view.render(display_data, self.message)
             
             command = self.terminal_view.get_input('> ')
-            quit_flag = self._process_label_command(command)
-            
-            if quit_flag:
+            self.quit_flag = self._process_label_command(command)
+
+            if self.quit_flag:
                 break
         
-    def _process_label_command(self, command: str) -> bool:
+    def _process_label_command(self, command: str):
         command = command.replace(',', ' ')
-        instruction = command.split()
+        actions = command.split()
         
-        quit_flag = False
-        
-        if instruction[0].isdecimal():
-            for label in instruction:
-                self.annotations= self.data_manager.update_annotation(self.annotations, label, self.current_image)
-        
-        elif instruction[0].lower() == 'n':
-            self.states = self.data_manager.update_sates(self.states, 1)
-        
-        elif instruction[0].lower() == 'p':
-            self.states = self.data_manager.update_sates(self.states, -1)
-        
-        elif instruction[0].lower() == 's':
-            pass
-        
-        elif instruction[0].lower() == 'a':
-            if len(instruction) != 1:
-                for add_label in instruction[1:]:
-                    self.label_list = self.data_manager.update_label_list(self.label_list, add_label)
+        if actions[0].isdecimal():
+            for label in actions:
+                self.annotations = self.data_manager.update_annotation(self.annotations, label, self.current_image)
+
+        elif actions[0].lower() == 'n':
+            self.states = self.data_manager.update_states(self.states, 1)
+
+        elif actions[0].lower() == 'p':
+            self.states = self.data_manager.update_states(self.states, -1)
+
+        elif actions[0].lower() == 's':
+            if len(actions) != 1:
+                result = []
+                result.extend(self.data_manager.search_label(self.label_list, actions[1:]))
+                if not result:
+                    self.message = f'エラー： 検索結果が見つかりません。'
+                else:
+                    self.message = f'検索結果: {" ".join(result)}'
             else:
-                self.terminal_view.show_message(f'エラー: ラベル名が入力されていません。')
+                self.message = f'エラー: 検索するラベル名が入力されていません。'
         
-        elif instruction[0].lower() == 'q':
-            quit_flag = True
+        elif actions[0].lower() == 'a':
+            if len(actions) != 1:
+                self.label_list = self.data_manager.update_label_list(self.label_list, actions[1:])
+                self.message = f'ラベル "{", ".join(actions[1:])}" を追加しました。'
+            else:
+                self.message = f'エラー: ラベル名が入力されていません。'
+        
+        elif actions[0].lower() == 'q':
+            self.quit_flag = True
+            self.terminal_view.show_message("保存して終了します。")
         
         else:
-            self.terminal_view.show_message(f'エラー: コマンドが入力されていないか、不明なコマンド"{command}"です。')
+            self.message = f'エラー: コマンドが入力されていないか、不明なコマンド"{command}"です。'
             
-        return quit_flag
+        self.data_manager.save_states(self.states)
+        self.data_manager.save_annotation(self.annotations)
+        self.data_manager.save_label_list(self.label_list)
 
     def _add_label(self):
-        pass
+        
+        self.message = "追加したいラベル名を入力してください。"
+
+        while True:
+            display_data = {
+                'mode': self.mode,
+                'label_list': self.label_list.get('labels', []),
+                'message': self.message
+            }
+            self.message = ''
+            self.terminal_view.render(display_data, self.message)
+
+            command = self.terminal_view.get_input("コマンド (d <ラベル名>:削除, q:終了) > ")
+
+            self.quit_flag = self._process_add_label_command(command)
+
+            if self.quit_flag:
+                break
+
+    def _process_add_label_command(self, command: str):
+        """
+        「ラベル追加モード」で入力されたコマンドを解釈し、状態を更新する。
+
+        Returns:
+            bool: ループを終了すべきならTrue、それ以外はFalse。
+        """
+
+        parts = command.split(' ', 1)
+        action = parts[0].lower()
+
+        if action == 'q':
+            self.terminal_view.show_message("ラベルリストを保存して終了します。")
+            self.quit_flag = True
+
+        elif action == 'd':
+            if len(parts) > 1:
+                label_to_delete = parts[1]
+                if label_to_delete in self.label_list['labels']:
+                    self.label_list['labels'].remove(label_to_delete)
+                    self.message = f"'{label_to_delete}' を削除しました。"
+                else:
+                    self.message = f"エラー: '{label_to_delete}' は存在しません。"
+            else:
+                self.message = "エラー: 削除するラベル名を指定してください。"
+
+        else: # 追加処理
+            new_label = command
+            if new_label in self.label_list:
+                self.message = f"エラー: '{new_label}' は既に存在します。"
+            else:
+                self.label_list['labels'].append(new_label)
+                self.label_list['labels'].sort()
+                self.message = f"'{new_label}' を追加しました。"
+        
+        self.data_manager.save_label_list(self.label_list)
     
