@@ -43,8 +43,20 @@ class DataManager:
                 labels = json.load(h)
                 
         return labels
+
+    def save_states(self, states: dict):
+        with open(self.state_path, mode='w') as f:
+            json.dump(states, f, indent=4)
     
-    def update_sates(self, states: dict, number: int) -> dict:
+    def save_annotation(self, annotations: dict):
+        with open(self.annotations_path, mode='w') as g:
+            json.dump(annotations, g, indent=4)
+    
+    def save_label_list(self, label_list: dict):
+        with open(self.labels_path, mode='w') as h:
+            json.dump(label_list, h, indent=4)
+    
+    def update_states(self, states: dict, number: int) -> dict:
         states['last_processed_index'] += number
             
         return states
@@ -52,5 +64,9 @@ class DataManager:
     def update_annotation(self, annotations: dict, label: str, current_image: str) -> dict:
         return annotations['annotations'][current_image].append(label)
     
-    def update_label_list(self, label_list: dict, add_label: str) -> dict:
-        return label_list['labels'].append(add_label)
+    def update_label_list(self, label_list: dict, add_labels: list) -> dict:
+        label_list['labels'].extend(add_labels)
+        return label_list
+
+    def search_label(self, label_list: dict, search_labels: list) -> list:
+        return [l for l in label_list['labels'] if l in search_labels]
