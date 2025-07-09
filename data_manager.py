@@ -60,12 +60,21 @@ class DataManager:
         states['last_processed_index'] += number
             
         return states
-    
-    def update_annotation(self, annotations: dict, label: str, current_image: str) -> dict:
-        return annotations['annotations'][current_image].append(label)
-    
-    def update_label_list(self, label_list: dict, add_labels: list) -> dict:
-        label_list['labels'].extend(add_labels)
+
+    def update_annotation(self, annotations: dict, labels: list, current_image: str, action: str) -> dict:
+        if action == "add":
+            annotations['annotations'][current_image].extend(labels)
+        elif action == "remove":
+            for label in labels:
+                annotations['annotations'][current_image].remove(label)
+        return annotations
+
+    def update_label_list(self, label_list: dict, labels: list, action: str) -> dict:
+        if action == "add":
+            label_list['labels'].extend(labels)
+        elif action == "remove":
+            for label in labels:
+                label_list['labels'].remove(label)
         return label_list
 
     def search_label(self, label_list: dict, search_labels: list) -> list:
