@@ -106,6 +106,13 @@ class LabelingTool:
             else:
                 self.message = f'エラー: ラベル名が入力されていません。'
         
+        elif actions[0].lower() == 'd':
+            if len(actions) != 1:
+                self.label_list = self.data_manager.update_annotation(self.annotations, actions[1:], self.current_image,action='remove')
+                self.message = f'ラベル "{", ".join(actions[1:])}" を削除しました。'
+            else:
+                self.message = f'エラー: 削除するラベル名が入力されていません。'
+        
         elif actions[0].lower() == 'q':
             self.quit_flag = True
             self.terminal_view.show_message("保存して終了します。")
@@ -138,13 +145,6 @@ class LabelingTool:
                 break
 
     def _process_add_label_command(self, command: str):
-        """
-        「ラベル追加モード」で入力されたコマンドを解釈し、状態を更新する。
-
-        Returns:
-            bool: ループを終了すべきならTrue、それ以外はFalse。
-        """
-
         command = command.replace(',', ' ')
         parts = command.split(' ', 1)
         action = parts[0].lower()
@@ -158,7 +158,6 @@ class LabelingTool:
                 label_to_delete = parts[1: ]
                 if label_to_delete in self.label_list['labels']:
                     self.data_manager.update_label_list(self.label_list, label_to_delete, action='remove')
-                    self.label_list['labels'].remove(label_to_delete)
                     self.message = f"'{label_to_delete}' を削除しました。"
                 else:
                     self.message = f"エラー: '{label_to_delete}' は存在しません。"
