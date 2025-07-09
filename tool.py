@@ -67,7 +67,7 @@ class LabelingTool:
             
             self.message = ''
             
-            self.terminal_view.render(display_data, self.message)
+            self.terminal_view.render(display_data, self.message, self.mode)
             
             command = self.terminal_view.get_input('> ')
             self.quit_flag = self._process_label_command(command)
@@ -80,8 +80,7 @@ class LabelingTool:
         actions = command.split()
         
         if actions[0].isdecimal():
-            for label in actions:
-                self.annotations = self.data_manager.update_annotation(self.annotations, label, self.current_image)
+            self.annotations = self.data_manager.update_annotation(self.annotations, actions, self.current_image, action='add')
 
         elif actions[0].lower() == 'n':
             self.states = self.data_manager.update_states(self.states, 1)
@@ -102,7 +101,7 @@ class LabelingTool:
         
         elif actions[0].lower() == 'a':
             if len(actions) != 1:
-                self.label_list = self.data_manager.update_label_list(self.label_list, actions[1:])
+                self.label_list = self.data_manager.update_label_list(self.label_list, actions[1:], action='add')
                 self.message = f'ラベル "{", ".join(actions[1:])}" を追加しました。'
             else:
                 self.message = f'エラー: ラベル名が入力されていません。'
@@ -146,6 +145,7 @@ class LabelingTool:
             bool: ループを終了すべきならTrue、それ以外はFalse。
         """
 
+        command = command.replace(',', ' ')
         parts = command.split(' ', 1)
         action = parts[0].lower()
 
@@ -155,8 +155,9 @@ class LabelingTool:
 
         elif action == 'd':
             if len(parts) > 1:
-                label_to_delete = parts[1]
+                label_to_delete = parts[1: ]
                 if label_to_delete in self.label_list['labels']:
+                    self.data_manager.update_label_list(self.label_list, label_to_delete, action='remove')
                     self.label_list['labels'].remove(label_to_delete)
                     self.message = f"'{label_to_delete}' を削除しました。"
                 else:
@@ -164,13 +165,14 @@ class LabelingTool:
             else:
                 self.message = "エラー: 削除するラベル名を指定してください。"
 
-        else: # 追加処理
-            new_label = command
+        else:
+            command = command.replace(',', ' ')
+            new_label = command.split()# 追加処理
             if new_label in self.label_list:
                 self.message = f"エラー: '{new_label}' は既に存在します。"
             else:
-                self.label_list['labels'].append(new_label)
-                self.label_list['labels'].sort()
+                self.data_manager.update_label_list(self.label_list, new_label, action='add')
+                new_label = ', '.join(new_label)
                 self.message = f"'{new_label}' を追加しました。"
         
         self.data_manager.save_label_list(self.label_list)
