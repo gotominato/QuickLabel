@@ -91,7 +91,6 @@ class LabelingTool:
         if actions[0].isdecimal():
             for label in actions:
                 self._update_annotation(label, action='add')
-            self.message = f"'{' '.join(actions)}' を追加しました。"
 
         elif actions[0].lower() == 'n':
             self._update_states(1)
@@ -123,7 +122,6 @@ class LabelingTool:
             if len(actions) != 1:
                 for label in actions[1:]:
                     self._update_annotation(label, action='remove')
-                self.message = f'ラベル "{", ".join(actions[1:])}" を削除しました。'
             else:
                 self.message = f'エラー: 削除するラベル名が入力されていません。'
         
@@ -151,7 +149,7 @@ class LabelingTool:
             self.message = ''
             self.terminal_view.render(display_data, self.message, self.mode)
 
-            command = self.terminal_view.get_input("コマンド (d <番号>:削除, q:終了) > ")
+            command = self.terminal_view.get_input('> ')
 
             self._process_add_label_command(command)
 
@@ -197,21 +195,23 @@ class LabelingTool:
         if self.current_image not in self.annotations['annotations']:
             self.annotations['annotations'][self.current_image] = []
             
+        label_name = self.label_list['labels'][int(label) - 1]
         if action == "add":
-            if label not in self.annotations['annotations'][self.current_image]:
-                self.annotations['annotations'][self.current_image].append(label)
-                    
+            if label_name not in self.annotations['annotations'][self.current_image]:
+                self.annotations['annotations'][self.current_image].append(label_name)
+
         elif action == "remove":
-            if label in self.annotations['annotations'][self.current_image]:
-                self.annotations['annotations'][self.current_image].remove(label)                 
-    
+            if label_name in self.annotations['annotations'][self.current_image]:
+                self.annotations['annotations'][self.current_image].remove(label_name)
+
     def _update_label_list(self, label: str, action: str) -> None:
         if action == "add":
             if label not in self.label_list['labels']:
                 self.label_list['labels'].append(label)
         elif action == "remove":
             num_label = int(label)
-            del self.label_list['labels'][num_label - 1]
+            if 0 <= num_label - 1 < len(self.label_list['labels']):
+                del self.label_list['labels'][num_label - 1]
 
     def _show_image(self, image_path: str) -> None:
         try:
