@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from PIL import Image
 
 from data_manager import DataManager
 from terminal_view import TerminalView
@@ -67,6 +68,7 @@ class LabelingTool:
             
             self.message = ''
             
+            self._show_image(image_path)
             self.terminal_view.render(display_data, self.message, self.mode)
             
             command = self.terminal_view.get_input('> ')
@@ -204,3 +206,9 @@ class LabelingTool:
             if label in self.label_list['labels']:
                 self.label_list['labels'].remove(label)
                     
+    def _show_image(self, image_path: str):
+        try:
+            img = Image.open(image_path)
+            img.show()
+        except Exception as e:
+            self.terminal_view.show_message(f"画像を表示できません: {e}")
