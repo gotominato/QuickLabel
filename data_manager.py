@@ -53,8 +53,8 @@ class DataManager:
             json.dump(annotations, g, indent=4)
     
     def save_label_list(self, label_list: dict):
-        with open(self.labels_path, mode='w') as h:
-            json.dump(label_list, h, indent=4)
+        with open(self.labels_path, mode='w', encoding='utf-8') as h:
+            json.dump(label_list, h, indent=4, ensure_ascii=False)
     
     def update_states(self, states: dict, number: int) -> dict:
         states['last_processed_index'] += number
@@ -77,5 +77,10 @@ class DataManager:
                 label_list['labels'].remove(label)
         return label_list
 
-    def search_label(self, label_list: dict, search_labels: list) -> list:
-        return [l for l in label_list['labels'] if l in search_labels]
+    def search_label(self, label_list: dict, search_labels: str) -> dict:
+        result = {}
+        for label in label_list['labels']:
+            if search_labels in label:
+                label_index = label_list['labels'].index(label)
+                result[label_index+1] = label
+        return result
