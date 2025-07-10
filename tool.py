@@ -80,13 +80,14 @@ class LabelingTool:
         actions = command.split()
         
         if actions[0].isdecimal():
-            self.annotations = self.data_manager.update_annotation(self.annotations, actions, self.current_image, action='add')
+            for label in actions:
+                self._update_annotation(label, action='add')
 
         elif actions[0].lower() == 'n':
-            self.states = self.data_manager.update_states(self.states, 1)
+            self._update_states(1)
 
         elif actions[0].lower() == 'p':
-            self.states = self.data_manager.update_states(self.states, -1)
+            self._update_states(-1)
 
         elif actions[0].lower() == 's':
             if len(actions) != 1:
@@ -101,14 +102,16 @@ class LabelingTool:
         
         elif actions[0].lower() == 'a':
             if len(actions) != 1:
-                self.label_list = self.data_manager.update_label_list(self.label_list, actions[1:], action='add')
+                for label in actions[1:]:
+                    self._update_label_list(label, action='add')
                 self.message = f'ラベル "{", ".join(actions[1:])}" を追加しました。'
             else:
                 self.message = f'エラー: ラベル名が入力されていません。'
         
-        elif actions[0].lower() == 'd':
+        elif actions[0].lower() == 'r':
             if len(actions) != 1:
-                self.label_list = self.data_manager.update_annotation(self.annotations, actions[1:], self.current_image,action='remove')
+                for label in actions[1:]:
+                    self._update_label_list(label, action='remove')
                 self.message = f'ラベル "{", ".join(actions[1:])}" を削除しました。'
             else:
                 self.message = f'エラー: 削除するラベル名が入力されていません。'
@@ -155,24 +158,49 @@ class LabelingTool:
 
         elif action == 'd':
             if len(parts) > 1:
-                label_to_delete = parts[1: ]
-                if label_to_delete in self.label_list['labels']:
-                    self.data_manager.update_label_list(self.label_list, label_to_delete, action='remove')
-                    self.message = f"'{label_to_delete}' を削除しました。"
-                else:
-                    self.message = f"エラー: '{label_to_delete}' は存在しません。"
+                labels = parts[1: ]
+                for label_to_delete in labels:
+                    if label_to_delete in self.label_list['labels']:
+                        self._update_label_list(label_to_delete, action='remove')
+                        self.message = f"'{label_to_delete}' を削除しました。"
+                    else:
+                        self.message = f"エラー: '{label_to_delete}' は存在しません。"
             else:
                 self.message = "エラー: 削除するラベル名を指定してください。"
 
         else:
             command = command.replace(',', ' ')
-            new_label = command.split()# 追加処理
-            if new_label in self.label_list:
+            new_label = command.split()
+            if new_label in self.label_list['labels']:
                 self.message = f"エラー: '{new_label}' は既に存在します。"
             else:
-                self.data_manager.update_label_list(self.label_list, new_label, action='add')
+                for label in new_label:
+                    self._update_label_list(label, action='add')
                 new_label = ', '.join(new_label)
                 self.message = f"'{new_label}' を追加しました。"
         
         self.data_manager.save_label_list(self.label_list)
+
+    def _update_states(self, number: int) -> None:
+        self.states['last_processed_index'] += number
+
+    def _update_annotation(self, label: str, action: str) -> None:
+        if self.current_image not in self.annotations['annotations']:
+            self.annotations['annotations'][self.current_image] = []
+            
+        if action == "add":
+            if label not in self.annotations['annotations'][self.current_image]:
+                self.annotations['annotations'][self.current_image].append(label)
+                    
+        elif action == "remove":
+            if label in self.annotations['annotations'][self.current_image]:
+                self.annotations['annotations'][self.current_image].remove(label)                 
     
+    def _update_label_list(self, label: str, action: str) -> None:
+        if action == "add":
+            if label not in self.label_list['labels']:
+                self.label_list['labels'].append(label)
+        elif action == "remove":
+            if label in self.label_list['labels']:
+                self.label_list['labels'].remove(label)
+                    
