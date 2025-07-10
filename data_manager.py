@@ -49,34 +49,13 @@ class DataManager:
             json.dump(states, f, indent=4)
     
     def save_annotation(self, annotations: dict):
-        with open(self.annotations_path, mode='w') as g:
-            json.dump(annotations, g, indent=4)
-    
+        with open(self.annotations_path, mode='w', encoding='utf-8') as g:
+            json.dump(annotations, g, indent=4, ensure_ascii=False)
+
     def save_label_list(self, label_list: dict):
         with open(self.labels_path, mode='w', encoding='utf-8') as h:
             json.dump(label_list, h, indent=4, ensure_ascii=False)
     
-    def update_states(self, states: dict, number: int) -> dict:
-        states['last_processed_index'] += number
-            
-        return states
-
-    def update_annotation(self, annotations: dict, labels: list, current_image: str, action: str) -> dict:
-        if action == "add":
-            annotations['annotations'][current_image].extend(labels)
-        elif action == "remove":
-            for label in labels:
-                annotations['annotations'][current_image].remove(label)
-        return annotations
-
-    def update_label_list(self, label_list: dict, labels: list, action: str) -> dict:
-        if action == "add":
-            label_list['labels'].extend(labels)
-        elif action == "remove":
-            for label in labels:
-                label_list['labels'].remove(label)
-        return label_list
-
     def search_label(self, label_list: dict, search_labels: str) -> dict:
         result = {}
         for label in label_list['labels']:
