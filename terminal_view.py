@@ -1,4 +1,5 @@
 import os
+import readline
 
 class TerminalView:
     def __init__(self):
