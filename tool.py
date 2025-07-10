@@ -89,8 +89,20 @@ class LabelingTool:
         actions = command.split()
         
         if actions[0].isdecimal():
-            for label in actions:
-                self._update_annotation(label, action='add')
+            if self.mode == 'single':
+                if len(actions) != 1:
+                    self.message = f'エラー: ラベル番号を一つだけ入力してください。'
+                else:
+                    if int(actions[0]) < 1 or int(actions[0]) > len(self.label_list['labels']):
+                        self.message = f'エラー: ラベル番号は1から{len(self.label_list["labels"])}の範囲で入力してください。'
+                    else:
+                        self._update_annotation(actions[0], action='add')
+            elif self.mode == 'multi':
+                for label in actions:
+                    if int(label) < 1 or int(label) > len(self.label_list['labels']):
+                        self.message = f'エラー: ラベル番号は1から{len(self.label_list["labels"])}の範囲で入力してください。'
+                    else:
+                        self._update_annotation(label, action='add')
 
         elif actions[0].lower() == 'n':
             self._update_states(1)
