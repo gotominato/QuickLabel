@@ -1,6 +1,7 @@
+import cv2
 import os
 from pathlib import Path
-from PIL import Image
+import readline
 
 from data_manager import DataManager
 from terminal_view import TerminalView
@@ -25,6 +26,8 @@ class LabelingTool:
         self.message = ''
         self.quit_flag = False
         
+        self.window_name = "QuickLabel Viewer"
+
     def _find_images(self) -> list:
         image_ext = ['*.jpg', '*.jpeg', '*.png']
         images = []
@@ -35,6 +38,8 @@ class LabelingTool:
     
     def run(self):
         if self.mode == 'single' or self.mode == 'multi':
+            cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
+            cv2.resizeWindow(self.window_name, 800, 600)
             self._label_image()
         elif self.mode == 'add_label':
             self._add_label()
@@ -45,12 +50,13 @@ class LabelingTool:
 
     def _label_image(self):
         total_images = len(self.images)
-        
         while True:
+            temp_index = self.current_index
             self.current_index = self.states['last_processed_index'] + 1
             
             if self.current_index >= total_images:
                 self.current_index = 0
+                self.states['last_processed_index'] = -1
             
             image_path = self.images[self.current_index]
             self.current_image = os.path.basename(image_path)
@@ -59,20 +65,21 @@ class LabelingTool:
         
             display_data = {
                 'mode': self.mode,
-                'totla_images': total_images,
+                'total_images': total_images,
                 'current_index': self.current_index,
-                'label_list': self.label_list,
+                'label_list': self.label_list['labels'],
                 'labels': labels,
                 'image': self.current_image
             }
-            
-            self.message = ''
-            
-            self._show_image(image_path)
+
+            if self.current_index != temp_index:
+                self._show_image(image_path)
+            cv2.waitKey(1)
+                
             self.terminal_view.render(display_data, self.message, self.mode)
             
             command = self.terminal_view.get_input('> ')
-            self.quit_flag = self._process_label_command(command)
+            self._process_label_command(command)
 
             if self.quit_flag:
                 break
@@ -84,6 +91,7 @@ class LabelingTool:
         if actions[0].isdecimal():
             for label in actions:
                 self._update_annotation(label, action='add')
+            self.message = f"'{' '.join(actions)}' を追加しました。"
 
         elif actions[0].lower() == 'n':
             self._update_states(1)
@@ -93,12 +101,13 @@ class LabelingTool:
 
         elif actions[0].lower() == 's':
             if len(actions) != 1:
-                result = []
-                result.extend(self.data_manager.search_label(self.label_list, actions[1:]))
+                result = {}
+                for s_label in actions[1:]:
+                    result.update(self.data_manager.search_label(self.label_list, s_label))
                 if not result:
                     self.message = f'エラー： 検索結果が見つかりません。'
                 else:
-                    self.message = f'検索結果: {" ".join(result)}'
+                    self.message = f'検索結果: {" ".join([f"{k}: {v}" for k, v in result.items()])}'
             else:
                 self.message = f'エラー: 検索するラベル名が入力されていません。'
         
@@ -113,7 +122,7 @@ class LabelingTool:
         elif actions[0].lower() == 'r':
             if len(actions) != 1:
                 for label in actions[1:]:
-                    self._update_label_list(label, action='remove')
+                    self._update_annotation(label, action='remove')
                 self.message = f'ラベル "{", ".join(actions[1:])}" を削除しました。'
             else:
                 self.message = f'エラー: 削除するラベル名が入力されていません。'
@@ -136,15 +145,15 @@ class LabelingTool:
         while True:
             display_data = {
                 'mode': self.mode,
-                'label_list': self.label_list.get('labels', []),
+                'label_list': self.label_list['labels'],
                 'message': self.message
             }
             self.message = ''
-            self.terminal_view.render(display_data, self.message)
+            self.terminal_view.render(display_data, self.message, self.mode)
 
-            command = self.terminal_view.get_input("コマンド (d <ラベル名>:削除, q:終了) > ")
+            command = self.terminal_view.get_input("コマンド (d <番号>:削除, q:終了) > ")
 
-            self.quit_flag = self._process_add_label_command(command)
+            self._process_add_label_command(command)
 
             if self.quit_flag:
                 break
@@ -162,11 +171,9 @@ class LabelingTool:
             if len(parts) > 1:
                 labels = parts[1: ]
                 for label_to_delete in labels:
-                    if label_to_delete in self.label_list['labels']:
-                        self._update_label_list(label_to_delete, action='remove')
-                        self.message = f"'{label_to_delete}' を削除しました。"
-                    else:
-                        self.message = f"エラー: '{label_to_delete}' は存在しません。"
+                    self._update_label_list(label_to_delete, action='remove')
+                    self.message = f"'{label_to_delete}' を削除しました。"
+
             else:
                 self.message = "エラー: 削除するラベル名を指定してください。"
 
@@ -184,7 +191,7 @@ class LabelingTool:
         self.data_manager.save_label_list(self.label_list)
 
     def _update_states(self, number: int) -> None:
-        self.states['last_processed_index'] += number
+        self.states['last_processed_index'] +=  number
 
     def _update_annotation(self, label: str, action: str) -> None:
         if self.current_image not in self.annotations['annotations']:
@@ -203,12 +210,14 @@ class LabelingTool:
             if label not in self.label_list['labels']:
                 self.label_list['labels'].append(label)
         elif action == "remove":
-            if label in self.label_list['labels']:
-                self.label_list['labels'].remove(label)
-                    
-    def _show_image(self, image_path: str):
+            num_label = int(label)
+            del self.label_list['labels'][num_label - 1]
+
+    def _show_image(self, image_path: str) -> None:
         try:
-            img = Image.open(image_path)
-            img.show()
+            img = cv2.imread(image_path)
+            if img is None:
+                raise FileNotFoundError
+            cv2.imshow(self.window_name, img)
         except Exception as e:
             self.terminal_view.show_message(f"画像を表示できません: {e}")
