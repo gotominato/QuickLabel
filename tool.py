@@ -7,7 +7,7 @@ from data_manager import DataManager
 from terminal_view import TerminalView
 
 class LabelingTool:
-    def __init__(self, folder: str, mode: str):
+    def __init__(self, folder: str, mode: str) -> None:
         self.folder = Path(folder)
         self.mode = mode
         
@@ -35,8 +35,8 @@ class LabelingTool:
             images.extend(self.folder.glob(ext))
             
         return sorted([str(i) for i in images])
-    
-    def run(self):
+
+    def run(self) -> None:
         if self.mode == 'single' or self.mode == 'multi':
             cv2.namedWindow(self.window_name, cv2.WINDOW_NORMAL)
             cv2.resizeWindow(self.window_name, 800, 600)
@@ -48,7 +48,7 @@ class LabelingTool:
             self.terminal_view.show_message(self.message)
             raise NotImplementedError
 
-    def _label_image(self):
+    def _label_image(self) -> None:
         total_images = len(self.images)
         while True:
             temp_index = self.current_index
@@ -60,43 +60,45 @@ class LabelingTool:
             
             image_path = self.images[self.current_index]
             self.current_image = os.path.basename(image_path)
-            
-            labels = self.annotations['annotations'].get(self.current_image, [])
         
             display_data = {
                 'mode': self.mode,
                 'total_images': total_images,
                 'current_index': self.current_index,
                 'label_list': self.label_list['labels'],
-                'labels': labels,
+                'labels': self.annotations['annotations'].get(self.current_image, []),
                 'image': self.current_image
             }
 
             if self.current_index != temp_index:
                 self._show_image(image_path)
             cv2.waitKey(1)
-                
-            self.terminal_view.render(display_data, self.message, self.mode)
-            
+
+            self.terminal_view.render(display_data, self.mode)
+
             command = self.terminal_view.get_input('> ')
             self._process_label_command(command)
 
             if self.quit_flag:
                 break
-        
-    def _process_label_command(self, command: str):
+
+    def _process_label_command(self, command: str) -> None:
         command = command.replace(',', ' ')
         actions = command.split()
         
         if actions[0].isdecimal():
             if self.mode == 'single':
-                if len(actions) != 1:
-                    self.message = f'エラー: ラベル番号を一つだけ入力してください。'
+                if self.annotations['annotations'].get(self.current_image, []) > 0:
+                    self.message = f'エラー: 既にラベルが付けられています。'
                 else:
-                    if int(actions[0]) < 1 or int(actions[0]) > len(self.label_list['labels']):
-                        self.message = f'エラー: ラベル番号は1から{len(self.label_list["labels"])}の範囲で入力してください。'
+                    if len(actions) != 1:
+                        self.message = f'エラー: ラベル番号を一つだけ入力してください。'
                     else:
-                        self._update_annotation(actions[0], action='add')
+                        if int(actions[0]) < 1 or int(actions[0]) > len(self.label_list['labels']):
+                            self.message = f'エラー: ラベル番号は1から{len(self.label_list["labels"])}の範囲で入力してください。'
+                        else:
+                            self._update_annotation(actions[0], action='add')
+                            
             elif self.mode == 'multi':
                 for label in actions:
                     if int(label) < 1 or int(label) > len(self.label_list['labels']):
@@ -115,10 +117,11 @@ class LabelingTool:
                 result = {}
                 for s_label in actions[1:]:
                     result.update(self.data_manager.search_label(self.label_list, s_label))
+                    
                 if not result:
                     self.message = f'エラー： 検索結果が見つかりません。'
                 else:
-                    self.message = f'検索結果: {" ".join([f"{k}: {v}" for k, v in result.items()])}'
+                    self.message = f'検索結果: {" ".join([f"{k}: {v}" for k, v in result.items()])}'      
             else:
                 self.message = f'エラー: 検索するラベル名が入力されていません。'
         
@@ -148,8 +151,8 @@ class LabelingTool:
         self.data_manager.save_annotation(self.annotations)
         self.data_manager.save_label_list(self.label_list)
 
-    def _add_label(self):
-        
+    def _add_label(self) -> None:
+
         self.message = "追加したいラベル名を入力してください。"
 
         while True:
@@ -159,7 +162,7 @@ class LabelingTool:
                 'message': self.message
             }
             self.message = ''
-            self.terminal_view.render(display_data, self.message, self.mode)
+            self.terminal_view.render(display_data, self.mode)
 
             command = self.terminal_view.get_input('> ')
 
@@ -168,7 +171,7 @@ class LabelingTool:
             if self.quit_flag:
                 break
 
-    def _process_add_label_command(self, command: str):
+    def _process_add_label_command(self, command: str) -> None:
         command = command.replace(',', ' ')
         parts = command.split(' ', 1)
         action = parts[0].lower()

@@ -9,8 +9,8 @@ class DataManager:
         self.labels_path = project_folder.joinpath('labels.json')
         
         self._initialize_files()
-        
-    def _initialize_files(self):
+
+    def _initialize_files(self) -> None:
         if not self.state_path.exists():
             with open(self.state_path, mode='w') as f:
                 init_states = {'last_processed_index': -1}
@@ -44,15 +44,15 @@ class DataManager:
                 
         return labels
 
-    def save_states(self, states: dict):
+    def save_states(self, states: dict) -> None:
         with open(self.state_path, mode='w') as f:
             json.dump(states, f, indent=4)
     
-    def save_annotation(self, annotations: dict):
+    def save_annotation(self, annotations: dict) -> None:
         with open(self.annotations_path, mode='w', encoding='utf-8') as g:
             json.dump(annotations, g, indent=4, ensure_ascii=False)
 
-    def save_label_list(self, label_list: dict):
+    def save_label_list(self, label_list: dict) -> None:
         with open(self.labels_path, mode='w', encoding='utf-8') as h:
             json.dump(label_list, h, indent=4, ensure_ascii=False)
     

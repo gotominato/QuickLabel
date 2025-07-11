@@ -5,20 +5,21 @@ class TerminalView:
     def __init__(self):
         pass
     
-    def render(self, display_data: dict, message: str, mode: str = 'N/A'):
+    def render(self, display_data: dict, mode: str = 'N/A') -> None:
         os.system('cls' if os.name == 'nt' else 'clear')
         if mode == 'single' or mode == 'multi':
-            self.view_label_image(display_data, message)
+            self.view_label_image(display_data)
         elif mode == 'add_label':
-            self.view_add_label(display_data, message)
+            self.view_add_label(display_data)
         
-    def view_label_image(self, display_data: dict, message: str):
+    def view_label_image(self, display_data: dict) -> None:
         mode = display_data.get('mode', 'N/A')
         total_images = display_data.get('total_images', 0)
         current_index = display_data.get('current_index', -1)
         label_list = display_data.get('label_list', [])
         current_labels = display_data.get('labels', [])
         image_name = display_data.get('image', 'N/A')
+        message = display_data.get('message', '')
 
         print("==================================================")
         print(f" QuickLabel | モード: {mode}")
@@ -48,10 +49,11 @@ class TerminalView:
             self.show_message(f"[INFO] {message}")
             print("----------------------------------------------")
             
-    def view_add_label(self, display_data: dict, message: str):
+    def view_add_label(self, display_data: dict) -> None:
         mode = display_data.get('mode', 'N/A')
         label_list = display_data.get('label_list', [])
-        
+        message = display_data.get('message', '')
+
         print("==================================================")
         print(f" QuickLabel | モード: {mode}")
         print("==================================================")
@@ -74,10 +76,10 @@ class TerminalView:
             self.show_message(f"[INFO] {message}")
             print("----------------------------------------------")
 
-    def get_input(self, input_sentence):
+    def get_input(self, input_sentence) -> str:
         command = input(input_sentence)
         
         return command
-    
-    def show_message(self, message):
+
+    def show_message(self, message) -> None:
         print(message)
