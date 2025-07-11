@@ -21,7 +21,7 @@
 - TerminalViewへの表示更新の指示。
 - OpenCVウィンドウの生成と管理。
 
-### 主要な属性
+#### 主要な属性
 | 属性名 | 型 | 説明 |
 | --- | --- | --- |
 | self.mode | str | 現在の操作モード (single, multi, add_label)。|
@@ -34,8 +34,8 @@
 | self.message | str | TerminalViewに表示する一時的なメッセージ。|
 | self.quit_flag | bool | アプリケーション終了を通知するフラグ。 |
 | self.window_name | str | OpenCVで表示するウィンドウの名前。 |
-    
-### 主要なメソッド
+
+#### 主要なメソッド
 - __init__(self, folder, mode): 各クラスのインスタンス化、DataManagerからのデータロード、状態変数の初期化を行う。
 - run(self): メインエントリーポイント。モードに応じて_label_image()または_add_label()を呼び出す。OpenCVウィンドウの生成もここで行う。
 - _label_image(self): 画像ラベリングのメインループ。状態管理、UI表示、コマンド処理のサイクルを回す。
@@ -68,7 +68,7 @@
 - LabelingToolから渡されたデータに基づき、整形されたUIをターミナルに表示する。
 - モードに応じて表示内容を切り替える。ユーザーからのキーボード入力を受け付ける。
 
-### 主要なメソッド
+#### 主要なメソッド
 - __init__(self): （現時点では処理なし）
 - render(self, display_data, message, mode): メインの描画メソッド。モードに応じてview_label_image()またはview_add_label()に処理を振り分ける。
 - view_label_image(self, display_data, message): ラベリングモードのUIを描画する。
