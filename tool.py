@@ -122,7 +122,7 @@ class LabelingTool:
             if len(parts) != 1:
                 result = {}
                 for s_class in parts[1:]:
-                    result.update(self.data_manager.search_class(self.classes_list, s_class))
+                    result.update(self._search_class(s_class))
 
                 if not result:
                     self.message = f'エラー： 検索結果が見つかりません。'
@@ -260,3 +260,11 @@ class LabelingTool:
             cv2.imshow(self.window_name, img)
         except Exception as e:
             self.terminal_view.show_message(f'画像を表示できません: {e}')
+
+    def _search_class(self, search_classes: str) -> dict:
+        result = {}
+        for class_name in self.classes_list['classes']:
+            if search_classes in class_name:
+                class_index = self.classes_list['classes'].index(class_name)
+                result[class_index+1] = class_name
+        return result
