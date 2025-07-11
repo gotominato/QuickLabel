@@ -55,11 +55,3 @@ class DataManager:
     def save_class_list(self, class_list: dict) -> None:
         with open(self.classes_path, mode='w', encoding='utf-8') as h:
             json.dump(class_list, h, indent=4, ensure_ascii=False)
-
-    def search_class(self, class_list: dict, search_classes: str) -> dict:
-        result = {}
-        for class_name in class_list['classes']:
-            if search_classes in class_name:
-                class_index = class_list['classes'].index(class_name)
-                result[class_index+1] = class_name
-        return result
