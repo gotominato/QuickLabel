@@ -52,7 +52,7 @@
 #### 責務
 - プロジェクトフォルダ内の各JSONファイル（state.json, annotations.json, labels.json）のパス管理。
 - 起動時にファイルが存在しない場合、初期内容でファイルを自動生成する。
-- LabelingToolからの指示に基づき、JSONファイルの読み込み（load_*）と書き込み（save_*）を行う。
+- LabelingToolからの指示に基づき、JSONファイルの読み込み（load\_\*）と書き込み（save\_\*）を行う。
 
 #### 主要なメソッド
 - \_\_init__(self, project_folder, images): 管理対象ファイルのパスを確定し、_initialize_files()を呼び出す。
@@ -79,5 +79,5 @@
 ## 処理フローの要点
 - 起動シーケンス: main.py -> LabelingTool.\_\_init__ -> DataManager.\_\_init__ (ファイル初期化) -> LabelingTool.run() -> _label_image() or _add_label()
 - 状態管理: 全てのアプリケーション状態（現在のインデックス、アノテーションデータ等）はLabelingToolのインスタンス属性として一元管理される。DataManagerやTerminalViewは状態を持たない。
-- データ永続化: ユーザーがコマンドを実行し、_process_*_commandメソッド内で状態が更新された直後、DataManagerのsave_*メソッドが呼び出され、変更が即座にファイルに書き込まれる。これにより、データ損失のリスクを最小限に抑えている。
+- データ永続化: ユーザーがコマンドを実行し、\_process\_\*\_commandメソッド内で状態が更新された直後、DataManagerのsave\_\*メソッドが呼び出され、変更が即座にファイルに書き込まれる。これにより、データ損失のリスクを最小限に抑えている。
 - UI更新: メインループの各サイクルで、LabelingToolは最新の状態をdisplay_dataとしてTerminalViewに渡し、render()を呼び出すことで画面が再描画される。
