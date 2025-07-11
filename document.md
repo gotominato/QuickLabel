@@ -36,7 +36,7 @@
 | self.window_name | str | OpenCVで表示するウィンドウの名前。 |
 
 #### 主要なメソッド
-- __init__(self, folder, mode): 各クラスのインスタンス化、DataManagerからのデータロード、状態変数の初期化を行う。
+- \_\_init__(self, folder, mode): 各クラスのインスタンス化、DataManagerからのデータロード、状態変数の初期化を行う。
 - run(self): メインエントリーポイント。モードに応じて_label_image()または_add_label()を呼び出す。OpenCVウィンドウの生成もここで行う。
 - _label_image(self): 画像ラベリングのメインループ。状態管理、UI表示、コマンド処理のサイクルを回す。
 - _add_label(self): ラベルマスタ編集のメインループ。
@@ -55,7 +55,7 @@
 - LabelingToolからの指示に基づき、JSONファイルの読み込み（load_*）と書き込み（save_*）を行う。
 
 #### 主要なメソッド
-- __init__(self, project_folder, images): 管理対象ファイルのパスを確定し、_initialize_files()を呼び出す。
+- \_\_init__(self, project_folder, images): 管理対象ファイルのパスを確定し、_initialize_files()を呼び出す。
 - _initialize_files(self): 各ファイルの存在を確認し、なければ空の状態で新規作成する。
 - load_* メソッド群: 対応するJSONファイルを読み込み、Pythonの辞書オブジェクトとして返す。
 - save_* メソッド群: LabelingToolから渡された辞書オブジェクトを、対応するJSONファイルに書き込む。日本語が文字化けしないようensure_ascii=Falseを指定する。
@@ -69,7 +69,7 @@
 - モードに応じて表示内容を切り替える。ユーザーからのキーボード入力を受け付ける。
 
 #### 主要なメソッド
-- __init__(self): （現時点では処理なし）
+- \_\_init__(self): （現時点では処理なし）
 - render(self, display_data, message, mode): メインの描画メソッド。モードに応じてview_label_image()またはview_add_label()に処理を振り分ける。
 - view_label_image(self, display_data, message): ラベリングモードのUIを描画する。
 - view_add_label(self, display_data, message): ラベル追加モードのUIを描画する。
@@ -77,7 +77,7 @@
 - show_message(self, message): 一時的なメッセージを表示する。
 
 ## 処理フローの要点
-- 起動シーケンス: main.py -> LabelingTool.__init__ -> DataManager.__init__ (ファイル初期化) -> LabelingTool.run() -> _label_image() or _add_label()
+- 起動シーケンス: main.py -> LabelingTool.\_\_init__ -> DataManager.\_\_init__ (ファイル初期化) -> LabelingTool.run() -> _label_image() or _add_label()
 - 状態管理: 全てのアプリケーション状態（現在のインデックス、アノテーションデータ等）はLabelingToolのインスタンス属性として一元管理される。DataManagerやTerminalViewは状態を持たない。
 - データ永続化: ユーザーがコマンドを実行し、_process_*_commandメソッド内で状態が更新された直後、DataManagerのsave_*メソッドが呼び出され、変更が即座にファイルに書き込まれる。これにより、データ損失のリスクを最小限に抑えている。
 - UI更新: メインループの各サイクルで、LabelingToolは最新の状態をdisplay_dataとしてTerminalViewに渡し、render()を呼び出すことで画面が再描画される。
